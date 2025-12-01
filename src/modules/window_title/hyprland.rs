@@ -1,79 +1,37 @@
 use crate::{
     config::{WindowTitleConfig, WindowTitleMode},
-    theme::AshellTheme,
     utils::truncate_text,
 };
 use hyprland::{data::Client, event_listener::AsyncEventListener, shared::HyprDataActiveOptional};
-use iced::{
-    Element, Subscription,
-    stream::channel,
-    widget::{container, text},
-};
+use iced::{Subscription, stream::channel};
 use log::{debug, error};
 use std::{
     any::TypeId,
     sync::{Arc, RwLock},
 };
 
-fn get_window(config: &WindowTitleConfig) -> Option<String> {
-    Client::get_active().ok().and_then(|w| {
-        w.map(|w| match config.mode {
-            WindowTitleMode::Title => w.title,
-            WindowTitleMode::Class => w.class,
+use super::{Message, WindowManager};
+
+pub struct HyprlandWindowManager;
+
+impl WindowManager for HyprlandWindowManager {
+    fn get_window(config: &WindowTitleConfig) -> Option<String> {
+        Client::get_active().ok().and_then(|w| {
+            w.map(|w| match config.mode {
+                WindowTitleMode::Title => w.title,
+                WindowTitleMode::Class => w.class,
+            })
+            .map(|v| {
+                if config.truncate_title_after_length > 0 {
+                    truncate_text(&v, config.truncate_title_after_length)
+                } else {
+                    v
+                }
+            })
         })
-        .map(|v| {
-            if config.truncate_title_after_length > 0 {
-                truncate_text(&v, config.truncate_title_after_length)
-            } else {
-                v
-            }
-        })
-    })
-}
-
-#[derive(Debug, Clone)]
-pub enum Message {
-    TitleChanged,
-}
-
-pub struct WindowTitle {
-    config: WindowTitleConfig,
-    value: Option<String>,
-}
-
-impl WindowTitle {
-    pub fn new(config: WindowTitleConfig) -> Self {
-        let init = get_window(&config);
-
-        Self {
-            value: init,
-            config,
-        }
     }
 
-    pub fn update(&mut self, message: Message) {
-        match message {
-            Message::TitleChanged => {
-                self.value = get_window(&self.config);
-            }
-        }
-    }
-
-    pub fn get_value(&self) -> Option<String> {
-        self.value.clone()
-    }
-
-    pub fn view(&'_ self, theme: &AshellTheme, title: String) -> Element<'_, Message> {
-        container(
-            text(title.to_string())
-                .size(theme.font_size.sm)
-                .wrapping(text::Wrapping::None),
-        )
-        .clip(true)
-        .into()
-    }
-
-    pub fn subscription(&self) -> Subscription<Message> {
+    fn create_subscription() -> Subscription<Message> {
         let id = TypeId::of::<Self>();
 
         Subscription::run_with_id(

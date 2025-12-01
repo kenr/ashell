@@ -24,6 +24,9 @@ use crate::{
     position_button::ButtonUIRef,
     theme::{AshellTheme, backdrop_color, darken_color},
 };
+
+#[cfg(feature = "hyprland")]
+use crate::modules::window_title::HyprlandWindowManager;
 use flexi_logger::LoggerHandle;
 use iced::{
     Alignment, Color, Element, Gradient, Length, Radians, Subscription, Task, Theme,
@@ -58,7 +61,8 @@ pub struct App {
     pub updates: Option<Updates>,
     pub clipboard: Option<Clipboard>,
     pub workspaces: Workspaces,
-    pub window_title: WindowTitle,
+    #[cfg(feature = "hyprland")]
+    pub window_title: WindowTitle<HyprlandWindowManager>,
     pub system_info: SystemInfo,
     pub keyboard_layout: KeyboardLayout,
     pub keyboard_submap: KeyboardSubmap,
@@ -127,7 +131,8 @@ impl App {
                     updates: config.updates.map(Updates::new),
                     clipboard: config.clipboard_cmd.map(Clipboard::new),
                     workspaces: Workspaces::new(config.workspaces),
-                    window_title: WindowTitle::new(config.window_title),
+                    #[cfg(feature = "hyprland")]
+                    window_title: WindowTitle::<HyprlandWindowManager>::new(config.window_title),
                     system_info: SystemInfo::new(config.system_info),
                     keyboard_layout: KeyboardLayout::new(config.keyboard_layout),
                     keyboard_submap: KeyboardSubmap::default(),
@@ -160,7 +165,10 @@ impl App {
         self.updates = config.updates.map(Updates::new);
         self.clipboard = config.clipboard_cmd.map(Clipboard::new);
         self.workspaces = Workspaces::new(config.workspaces);
-        self.window_title = WindowTitle::new(config.window_title);
+        #[cfg(feature = "hyprland")]
+        {
+            self.window_title = WindowTitle::<HyprlandWindowManager>::new(config.window_title);
+        }
         self.system_info = SystemInfo::new(config.system_info);
         self.keyboard_layout = KeyboardLayout::new(config.keyboard_layout);
         self.keyboard_submap = KeyboardSubmap::default();
@@ -304,7 +312,10 @@ impl App {
                 Task::none()
             }
             Message::WindowTitle(msg) => {
-                self.window_title.update(msg);
+                #[cfg(feature = "hyprland")]
+                {
+                    self.window_title.update(msg);
+                }
                 Task::none()
             }
             Message::SystemInfo(msg) => {

@@ -15,8 +15,12 @@ pub mod app_launcher;
 pub mod clipboard;
 pub mod clock;
 pub mod custom_module;
+
+#[cfg(feature = "hyprland")]
 pub mod keyboard_layout;
+#[cfg(feature = "hyprland")]
 pub mod keyboard_submap;
+
 pub mod media_player;
 pub mod privacy;
 pub mod settings;
