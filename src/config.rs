@@ -552,7 +552,9 @@ pub enum ModuleName {
     Workspaces,
     WindowTitle,
     SystemInfo,
+    #[cfg(feature = "hyprland")]
     KeyboardLayout,
+    #[cfg(feature = "hyprland")]
     KeyboardSubmap,
     Tray,
     Clock,
@@ -584,7 +586,9 @@ impl<'de> Deserialize<'de> for ModuleName {
                     "Workspaces" => ModuleName::Workspaces,
                     "WindowTitle" => ModuleName::WindowTitle,
                     "SystemInfo" => ModuleName::SystemInfo,
+                    #[cfg(feature = "hyprland")]
                     "KeyboardLayout" => ModuleName::KeyboardLayout,
+                    #[cfg(feature = "hyprland")]
                     "KeyboardSubmap" => ModuleName::KeyboardSubmap,
                     "Tray" => ModuleName::Tray,
                     "Clock" => ModuleName::Clock,

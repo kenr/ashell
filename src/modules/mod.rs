@@ -276,6 +276,7 @@ impl App {
                 self.system_info.view(&self.theme).map(Message::SystemInfo),
                 Some(OnModulePress::ToggleMenu(MenuType::SystemInfo)),
             )),
+            #[cfg(feature = "hyprland")]
             ModuleName::KeyboardLayout => self.keyboard_layout.view(&self.theme).map(|view| {
                 (
                     view.map(Message::KeyboardLayout),
@@ -284,6 +285,7 @@ impl App {
                     )))),
                 )
             }),
+            #[cfg(feature = "hyprland")]
             ModuleName::KeyboardSubmap => self
                 .keyboard_submap
                 .view(&self.theme)
@@ -330,11 +332,13 @@ impl App {
             ModuleName::SystemInfo => {
                 Some(self.system_info.subscription().map(Message::SystemInfo))
             }
+            #[cfg(feature = "hyprland")]
             ModuleName::KeyboardLayout => Some(
                 self.keyboard_layout
                     .subscription()
                     .map(Message::KeyboardLayout),
             ),
+            #[cfg(feature = "hyprland")]
             ModuleName::KeyboardSubmap => Some(
                 self.keyboard_submap
                     .subscription()

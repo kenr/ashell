@@ -1,5 +1,5 @@
-use super::{Workspace, Displayed, Message, WorkspaceManager};
-use crate::config::{WorkspacesModuleConfig, WorkspaceVisibilityMode};
+use super::{Displayed, Message, Workspace, WorkspaceManager};
+use crate::config::WorkspacesModuleConfig;
 use hyprland::{
     dispatch::MonitorIdentifier,
     event_listener::AsyncEventListener,
@@ -357,19 +357,20 @@ impl WorkspaceManager for HyprlandWorkspaceManager {
         )
     }
 
-    fn change_workspace(id: i32, config: &WorkspacesModuleConfig) -> Result<(), Box<dyn std::error::Error>> {
+    fn change_workspace(
+        id: i32,
+        config: &WorkspacesModuleConfig,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         debug!("changing workspace to: {id}");
         let res = if config.enable_virtual_desktops {
             let id_str = id.to_string();
-            hyprland::dispatch::Dispatch::call(
-                hyprland::dispatch::DispatchType::Custom("vdesk", &id_str),
-            )
+            hyprland::dispatch::Dispatch::call(hyprland::dispatch::DispatchType::Custom(
+                "vdesk", &id_str,
+            ))
         } else {
-            hyprland::dispatch::Dispatch::call(
-                hyprland::dispatch::DispatchType::Workspace(
-                    hyprland::dispatch::WorkspaceIdentifierWithSpecial::Id(id),
-                ),
-            )
+            hyprland::dispatch::Dispatch::call(hyprland::dispatch::DispatchType::Workspace(
+                hyprland::dispatch::WorkspaceIdentifierWithSpecial::Id(id),
+            ))
         };
 
         res.map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
@@ -377,18 +378,17 @@ impl WorkspaceManager for HyprlandWorkspaceManager {
 
     fn toggle_special_workspace(workspace: &Workspace) -> Result<(), Box<dyn std::error::Error>> {
         debug!("toggle special workspace: {}", workspace.id);
-        let res = hyprland::dispatch::Dispatch::call(
-            hyprland::dispatch::DispatchType::FocusMonitor(MonitorIdentifier::Id(
-                workspace.monitor_id.unwrap_or_default(),
-            )),
-        )
-        .and_then(|_| {
-            hyprland::dispatch::Dispatch::call(
-                hyprland::dispatch::DispatchType::ToggleSpecialWorkspace(Some(
-                    workspace.name.clone(),
-                )),
-            )
-        });
+        let res =
+            hyprland::dispatch::Dispatch::call(hyprland::dispatch::DispatchType::FocusMonitor(
+                MonitorIdentifier::Id(workspace.monitor_id.unwrap_or_default()),
+            ))
+            .and_then(|_| {
+                hyprland::dispatch::Dispatch::call(
+                    hyprland::dispatch::DispatchType::ToggleSpecialWorkspace(Some(
+                        workspace.name.clone(),
+                    )),
+                )
+            });
 
         res.map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
     }

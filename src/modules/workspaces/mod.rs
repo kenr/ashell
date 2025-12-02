@@ -1,11 +1,15 @@
-use crate::{config::WorkspacesModuleConfig, theme::AshellTheme, outputs::Outputs};
+use crate::{config::WorkspacesModuleConfig, outputs::Outputs, theme::AshellTheme};
 use iced::{Element, Subscription, window::Id};
 
 #[cfg(feature = "hyprland")]
 pub mod hyprland;
-
 #[cfg(feature = "hyprland")]
 pub use hyprland::HyprlandWorkspaceManager;
+
+#[cfg(feature = "niri")]
+pub mod niri;
+#[cfg(feature = "niri")]
+pub use niri::NiriWorkspaceManager;
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum Displayed {
@@ -35,7 +39,10 @@ pub enum Message {
 pub trait WorkspaceManager {
     fn get_workspaces(config: &WorkspacesModuleConfig) -> Vec<Workspace>;
     fn create_subscription(config: &WorkspacesModuleConfig) -> Subscription<Message>;
-    fn change_workspace(id: i32, config: &WorkspacesModuleConfig) -> Result<(), Box<dyn std::error::Error>>;
+    fn change_workspace(
+        id: i32,
+        config: &WorkspacesModuleConfig,
+    ) -> Result<(), Box<dyn std::error::Error>>;
     fn toggle_special_workspace(workspace: &Workspace) -> Result<(), Box<dyn std::error::Error>>;
 }
 
@@ -117,7 +124,10 @@ impl<WM: WorkspaceManager> Workspaces<WM> {
         outputs: &Outputs,
     ) -> Element<'a, Message> {
         use crate::config::WorkspaceVisibilityMode;
-        use iced::{Length, alignment, widget::{MouseArea, Row, button, container, text}};
+        use iced::{
+            Length, alignment,
+            widget::{MouseArea, Row, button, container, text},
+        };
 
         let monitor_name = outputs.get_monitor_name(id);
 

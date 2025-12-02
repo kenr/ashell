@@ -9,8 +9,6 @@ use crate::{
         clipboard::{self, Clipboard},
         clock::Clock,
         custom_module::{self, Custom},
-        keyboard_layout::KeyboardLayout,
-        keyboard_submap::KeyboardSubmap,
         media_player::MediaPlayer,
         privacy::Privacy,
         settings::Settings,
@@ -26,7 +24,19 @@ use crate::{
 };
 
 #[cfg(feature = "hyprland")]
+use crate::modules::keyboard_layout::KeyboardLayout;
+#[cfg(feature = "hyprland")]
+use crate::modules::keyboard_submap::KeyboardSubmap;
+#[cfg(feature = "hyprland")]
 use crate::modules::window_title::HyprlandWindowManager;
+#[cfg(feature = "hyprland")]
+use crate::modules::workspaces::HyprlandWorkspaceManager;
+
+#[cfg(feature = "niri")]
+use crate::modules::window_title::NiriWindowManager;
+#[cfg(feature = "niri")]
+use crate::modules::workspaces::NiriWorkspaceManager;
+
 use flexi_logger::LoggerHandle;
 use iced::{
     Alignment, Color, Element, Gradient, Length, Radians, Subscription, Task, Theme,
@@ -60,12 +70,23 @@ pub struct App {
     pub custom: HashMap<String, Custom>,
     pub updates: Option<Updates>,
     pub clipboard: Option<Clipboard>,
-    pub workspaces: Workspaces,
+    pub system_info: SystemInfo,
+
+    #[cfg(feature = "niri")]
+    pub workspaces: Workspaces<NiriWorkspaceManager>,
+    #[cfg(feature = "niri")]
+    pub window_title: WindowTitle<NiriWindowManager>,
+
+    #[cfg(feature = "hyprland")]
+    pub workspaces: Workspaces<HyprlandWorkspaceManager>,
     #[cfg(feature = "hyprland")]
     pub window_title: WindowTitle<HyprlandWindowManager>,
-    pub system_info: SystemInfo,
+
+    #[cfg(feature = "hyprland")]
     pub keyboard_layout: KeyboardLayout,
+    #[cfg(feature = "hyprland")]
     pub keyboard_submap: KeyboardSubmap,
+
     pub tray: TrayModule,
     pub clock: Clock,
     pub privacy: Privacy,
@@ -86,7 +107,9 @@ pub enum Message {
     Workspaces(modules::workspaces::Message),
     WindowTitle(modules::window_title::Message),
     SystemInfo(modules::system_info::Message),
+    #[cfg(feature = "hyprland")]
     KeyboardLayout(modules::keyboard_layout::Message),
+    #[cfg(feature = "hyprland")]
     KeyboardSubmap(modules::keyboard_submap::Message),
     Tray(modules::tray::Message),
     Clock(modules::clock::Message),
@@ -131,11 +154,18 @@ impl App {
                     updates: config.updates.map(Updates::new),
                     clipboard: config.clipboard_cmd.map(Clipboard::new),
                     workspaces: Workspaces::new(config.workspaces),
+                    system_info: SystemInfo::new(config.system_info),
+
                     #[cfg(feature = "hyprland")]
                     window_title: WindowTitle::<HyprlandWindowManager>::new(config.window_title),
-                    system_info: SystemInfo::new(config.system_info),
+                    #[cfg(feature = "hyprland")]
                     keyboard_layout: KeyboardLayout::new(config.keyboard_layout),
+                    #[cfg(feature = "hyprland")]
                     keyboard_submap: KeyboardSubmap::default(),
+
+                    #[cfg(feature = "niri")]
+                    window_title: WindowTitle::<NiriWindowManager>::new(config.window_title),
+
                     tray: TrayModule::default(),
                     clock: Clock::new(config.clock),
                     privacy: Privacy::default(),
@@ -165,13 +195,15 @@ impl App {
         self.updates = config.updates.map(Updates::new);
         self.clipboard = config.clipboard_cmd.map(Clipboard::new);
         self.workspaces = Workspaces::new(config.workspaces);
+
         #[cfg(feature = "hyprland")]
         {
             self.window_title = WindowTitle::<HyprlandWindowManager>::new(config.window_title);
+            self.keyboard_layout = KeyboardLayout::new(config.keyboard_layout);
+            self.keyboard_submap = KeyboardSubmap::default();
         }
+
         self.system_info = SystemInfo::new(config.system_info);
-        self.keyboard_layout = KeyboardLayout::new(config.keyboard_layout);
-        self.keyboard_submap = KeyboardSubmap::default();
         self.clock = Clock::new(config.clock);
         self.settings
             .update(modules::settings::Message::ConfigReloaded(config.settings));
@@ -316,16 +348,23 @@ impl App {
                 {
                     self.window_title.update(msg);
                 }
+
+                #[cfg(feature = "niri")]
+                {
+                    self.window_title.update(msg);
+                }
                 Task::none()
             }
             Message::SystemInfo(msg) => {
                 self.system_info.update(msg);
                 Task::none()
             }
+            #[cfg(feature = "hyprland")]
             Message::KeyboardLayout(message) => {
                 self.keyboard_layout.update(message);
                 Task::none()
             }
+            #[cfg(feature = "hyprland")]
             Message::KeyboardSubmap(message) => {
                 self.keyboard_submap.update(message);
                 Task::none()
